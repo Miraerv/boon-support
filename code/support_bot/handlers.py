@@ -525,13 +525,13 @@ async def handle_closure_confirmation(call: agtypes.CallbackQuery, *args, **kwar
                 reply_markup=build_rating_keyboard(ticket_id).as_markup()
             )
             
-            # Notify admin
-            if ticket.thread_id:
-                await bot.send_message(
-                    bot.cfg['admin_group_id'],
-                    f"✅ Тикет №{ticket_id} закрыт с подтверждением пользователя. Ожидается оценка ⭐.",
-                    message_thread_id=ticket.thread_id
-                )
+            # # Notify admin
+            # if ticket.thread_id:
+            #     await bot.send_message(
+            #         bot.cfg['admin_group_id'],
+            #         f"✅ Тикет №{ticket_id} закрыт с подтверждением пользователя. Ожидается оценка ⭐.",
+            #         message_thread_id=ticket.thread_id
+            #     )
             
             await call.answer("Обращение закрыто, ждём оценку!")
             
@@ -597,9 +597,10 @@ async def handle_rating(call: agtypes.CallbackQuery, *args, **kwargs):
         # Уведомляем админов
         ticket = await bot.db.tickets.get_by_id(ticket_id)
         if ticket and ticket.thread_id:
+            stars = "⭐" * rating
             await bot.send_message(
                 bot.cfg['admin_group_id'],
-                f"⭐ Пользователь поставил оценку {rating}/5 по тикету №{ticket_id}",
+                f"✨ Пользователь поставил оценку: {stars}\n",
                 message_thread_id=ticket.thread_id
             )
 
