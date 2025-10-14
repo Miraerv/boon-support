@@ -597,7 +597,7 @@ async def handle_rating(call: agtypes.CallbackQuery, *args, **kwargs):
             stars = "⭐" * rating
             await bot.send_message(
                 bot.cfg['admin_group_id'],
-                f"✨ Пользователь поставил оценку: {stars}\n",
+                f"✅ Тикет закрыт. Пользователь поставил оценку: {stars}\n",
                 message_thread_id=ticket.thread_id
             )
 
