@@ -504,10 +504,7 @@ async def handle_closure_confirmation(call: agtypes.CallbackQuery, *args, **kwar
         now_yakutsk = datetime.datetime.now(ZoneInfo("Asia/Yakutsk"))
         yakutsk_hour = now_yakutsk.hour
         
-        if action == 'closure_yes':
-            # User confirms issue resolved
-            await bot.db.tickets.add_rating_and_close(ticket_id, rating=None)  # No rating
-            
+        if action == 'closure_yes':            
             # Close forum topic
             if ticket.thread_id:
                 group_id = bot.cfg['admin_group_id']
