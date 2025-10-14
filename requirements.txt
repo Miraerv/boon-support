@@ -1,0 +1,9 @@
+aiogram==3.18.0
+aiosqlite==0.20.0
+alembic==1.13.1
+apscheduler==3.10.4
+gspread-asyncio==2.0.0
+python-dotenv==1.0.1
+SQLAlchemy==2.0.27
+toml==0.10.2
+aiomysql==0.2.0
