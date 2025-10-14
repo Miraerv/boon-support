@@ -289,7 +289,7 @@ async def cmd_close_ticket(msg: agtypes.Message, *args, **kwargs) -> None:
         return
 
     await bot.db.tickets.close_ticket(ticket.id)
-    await msg.answer(f"Тикет №{ticket.id} закрыт. Запрос решен ли вопрос отправлен пользователю.")
+    await msg.answer(f"Решен ли вопрос отправлен пользователю.")
 
     from .buttons import build_closure_confirmation_keyboard
     confirmation_text = "Подскажите, пожалуйста, удалось ли решить Ваш вопрос?"
