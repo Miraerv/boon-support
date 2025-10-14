@@ -348,20 +348,21 @@ class TicketRepo(SqlRepo):
                         closed_at=row.closed_at
                     )
                 return None
-        
-    async def add_rating_and_close(self, ticket_id: str, rating: Optional[int] = None) -> None:
-        """Close ticket permanently (rating is now optional)."""
+
+    async def update_rating(self, ticket_id: str, rating: int) -> None:
+        """Update ticket rating after closure (O(1))."""
         async with self.engine.begin() as conn:
             await conn.execute(
                 sa.update(BoomTickets)
                 .where(BoomTickets.id == ticket_id)
                 .values(
-                    rating=rating,  # Can be None now
-                    is_closed=True, 
-                    status='closed', 
+                    rating=rating,
+                    is_closed=True,
+                    status='closed',
                     closed_at=sa.func.now()
                 )
             )
+
 
     async def close(self) -> None:
         await self.engine.dispose()
