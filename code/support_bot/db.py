@@ -124,7 +124,7 @@ class SqlRepo:
         self.url = url
 
 
-# Updated: SqlBoomUser (add thread_id, subject handling, create_stored, find_by_thread_id)
+# Updated: SqlBoomUser (add thread_id, subject handling, find_by_thread_id)
 class SqlBoomUser(SqlRepo):
     """
     Repository for BoomUsers and BoomOrderDetails tables (MySQL).
@@ -215,18 +215,6 @@ class SqlBoomUser(SqlRepo):
                     'created_at': row.created_at
                 }
             return None
-
-
-    async def create_stored(self, telegram_id: int, name: str, phone: Optional[str] = None) -> int:
-        """Create a stub user (O(1), returns new user_id)."""
-        async with self.engine.begin() as conn:
-            result = await conn.execute(
-                sa.insert(BoomUsers).values(
-                    name=name, phone=phone, telegram_id=telegram_id
-                ).returning(BoomUsers.id)
-            )
-            user_id = result.scalar()
-        return int(user_id)
 
     async def close(self) -> None:
         """Close engine deterministically."""
