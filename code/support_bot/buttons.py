@@ -328,6 +328,21 @@ def build_confirm_menu(yes_answer: str='Confirmed', no_answer: str='Canceled') -
     }
     return menu
 
+def build_rating_keyboard(ticket_id: str) -> InlineKeyboardBuilder:
+    """Клавиатура для оценки обращения (1–5 звёзд)."""
+    builder = InlineKeyboardBuilder()
+    stars = [
+        ("⭐", 1),
+        ("⭐⭐", 2),
+        ("⭐⭐⭐", 3),
+        ("⭐⭐⭐⭐", 4),
+        ("⭐⭐⭐⭐⭐", 5),
+    ]
+    for emoji, rating in stars:
+        builder.button(text=emoji, callback_data=f"rate:{ticket_id}:{rating}")
+    builder.adjust(1)
+    return builder
+
 
 # New ReplyKeyboard functions for support flow
 def get_share_phone_keyboard() -> ReplyKeyboardMarkup:

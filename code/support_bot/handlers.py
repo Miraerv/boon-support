@@ -12,7 +12,7 @@ from .buttons import (
     admin_btn_handler, send_new_msg_with_keyboard, user_btn_handler,
     get_share_phone_keyboard, get_categories_keyboard,
     get_faq_keyboard, get_orders_keyboard, get_remove_keyboard,
-    build_feedback_keyboard, TicketCBD
+    build_feedback_keyboard, build_rating_keyboard, TicketCBD
 )
 from .informing import handle_error, log
 from .filters import (
@@ -519,20 +519,21 @@ async def handle_closure_confirmation(call: agtypes.CallbackQuery, *args, **kwar
             
             # Thank user
             await call.message.edit_text(
-                f"Мы рады, что вопрос решен. Обращение №{ticket_id} закрыто. "
-                f"Спасибо, что обратились!\n"
-                f"Чтобы начать новое обращение — нажмите /start."
+                f"Мы рады, что вопрос решен. Обращение №{ticket_id} закрыто.\n"
+                f"Спасибо, что обратились в службу заботы Boon Market! 💛\n\n"
+                f"Пожалуйста, оцените качество обслуживания:",
+                reply_markup=build_rating_keyboard(ticket_id).as_markup()
             )
             
             # Notify admin
             if ticket.thread_id:
                 await bot.send_message(
                     bot.cfg['admin_group_id'],
-                    f"✅ Тикет №{ticket_id} закрыт с подтверждением пользователя. Тема форума закрыта.",
+                    f"✅ Тикет №{ticket_id} закрыт с подтверждением пользователя. Ожидается оценка ⭐.",
                     message_thread_id=ticket.thread_id
                 )
             
-            await call.answer("Обращение закрыто!")
+            await call.answer("Обращение закрыто, ждём оценку!")
             
         elif action == 'closure_no':
             # User says issue NOT resolved - reopen ticket
@@ -574,6 +575,39 @@ async def handle_closure_confirmation(call: agtypes.CallbackQuery, *args, **kwar
     except Exception as e:
         await bot.log_error(e)
         await call.answer("Произошла ошибка")
+
+@log
+@handle_error
+async def handle_rating(call: agtypes.CallbackQuery, *args, **kwargs):
+    """Handle user rating (1–5 stars)"""
+    bot = call.message.bot
+    try:
+        _, ticket_id, rating_str = call.data.split(':')
+        rating = int(rating_str)
+
+        # Обновляем рейтинг в базе
+        await bot.db.tickets.update_rating(ticket_id, rating)
+
+        # Обновляем сообщение
+        await call.message.edit_text(
+            f"Спасибо за оценку {rating}⭐!\n"
+            f"Чтобы начать новое обращение — нажмите /start."
+        )
+
+        # Уведомляем админов
+        ticket = await bot.db.tickets.get_by_id(ticket_id)
+        if ticket and ticket.thread_id:
+            await bot.send_message(
+                bot.cfg['admin_group_id'],
+                f"⭐ Пользователь поставил оценку {rating}/5 по тикету №{ticket_id}",
+                message_thread_id=ticket.thread_id
+            )
+
+        await call.answer("Спасибо за вашу оценку!")
+    except Exception as e:
+        await bot.log_error(e)
+        await call.answer("Произошла ошибка при сохранении оценки.")
+
 
 
 def register_handlers(dp: Dispatcher) -> None:
@@ -622,6 +656,7 @@ def register_handlers(dp: Dispatcher) -> None:
 
     # RATING HANDLER (исправлено: проверяем префикс 't:' вместо 't::')
     dp.callback_query.register(handle_closure_confirmation, BtnInPrivateChat(), F.data.startswith('t:'))
+    dp.callback_query.register(handle_rating, BtnInPrivateChat(), F.data.startswith('rate:'))
 
     # GENERAL CALLBACK HANDLERS
     dp.callback_query.register(user_btn_handler, BtnInPrivateChat())
