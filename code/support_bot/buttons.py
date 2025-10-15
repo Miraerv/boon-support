@@ -262,7 +262,7 @@ def build_closure_confirmation_keyboard(ticket_id: str) -> InlineKeyboardBuilder
 
 def build_start_over_keyboard() -> InlineKeyboardBuilder:
     kb = InlineKeyboardBuilder()
-    kb.button(text="Новое обращение", callback_data="start_over")
+    kb.button(text="Главное меню", callback_data="start_over")
     return kb
 
 async def send_file(bot, chat_id: int, menuitem: dict) -> agtypes.Message:
