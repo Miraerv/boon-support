@@ -578,7 +578,7 @@ async def handle_start_over(call: agtypes.CallbackQuery, state: FSMContext, *arg
     if "Чтобы начать" in old_text:
         old_text = old_text.split("Чтобы начать")[0].strip()
 
-    await call.message.edit_text(f"{old_text}\n\Меню открыто")
+    await call.message.edit_text(f"{old_text}\n")
 
 
     # эмулируем /start
