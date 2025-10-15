@@ -138,6 +138,9 @@ async def user_message(msg: agtypes.Message, state: FSMContext, *args, **kwargs)
             branch=branch,
             store_id=store_id
         )
+
+        display_name_with_id = f"№{ticket_id} | {user.name if user and user.name != 'Гость' else msg.from_user.full_name}"
+
         
         # Build subject
         if user_id:
@@ -146,10 +149,10 @@ async def user_message(msg: agtypes.Message, state: FSMContext, *args, **kwargs)
                 subject_parts.append(store_title)
             if order_number and order_number != 'не указан':
                 subject_parts.append(order_number)
-            subject_parts.append(display_name)
+            subject_parts.append(display_name_with_id)
             subject = ': '.join(subject_parts)
         else:
-            subject = f"Незарегистрированный пользователь: {display_name} ({category})"
+            subject = f"Незарегистрированный пользователь: {display_name_with_id} ({category})"
         
         # Build structured ticket info
         store_display = store_title if store_title else "Не указан"
