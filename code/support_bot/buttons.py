@@ -410,7 +410,7 @@ async def get_orders_keyboard(orders: List[BoomOrder], category: str, state: FSM
                 date_str = order.created_at.strftime('%d.%m.%Y')
                 time_str = order.created_at.strftime('%H:%M')
                 if idx == 0:
-                    text = f"Последний заказ от {date_str} {time_str}"
+                    text = f"Последний заказ №{order.order_number} от {date_str} {time_str}"
                 else:
                     text = f"Заказ №{order.order_number} от {date_str} {time_str}"
                 
