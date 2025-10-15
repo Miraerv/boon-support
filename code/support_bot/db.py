@@ -51,7 +51,7 @@ class BoomOrderDetails(BaseMySQL):
 class BoomTickets(BaseMySQL):
     __tablename__ = 'boom_tickets'
 
-    id = sa.Column(sa.String(36), primary_key=True)  # UUID str
+    id = sa.Column(sa.BigInteger, primary_key=True, autoincrement=True)  # UUID str
     telegram_id = sa.Column(sa.BigInteger, nullable=False, index=True)  # Required for unregistered users
     user_id = sa.Column(sa.Integer, nullable=True, index=True)  # Optional, null for unregistered users
     thread_id = sa.Column(sa.BigInteger, nullable=True, index=True)  # Telegram forum topic ID per ticket
@@ -88,7 +88,7 @@ class BoomOrder:
 @dataclass
 class Ticket:
     """Dataclass for BoomTickets row"""
-    id: str
+    id: int
     telegram_id: int
     user_id: Optional[int]
     thread_id: Optional[int]
@@ -232,17 +232,16 @@ class TicketRepo(SqlRepo):
 
     async def create(self, telegram_id: int, user_id: Optional[int], category: str, order_number: Optional[str], 
                      description: str, branch: str, thread_id: Optional[int] = None, 
-                     subject: Optional[str] = None, store_id: Optional[str] = None) -> str:
-        """Create ticket (O(1), idempotent UUID)."""
-        ticket_id = str(uuid.uuid4())
+                     subject: Optional[str] = None, store_id: Optional[str] = None) -> int:
         async with self.engine.begin() as conn:
-            await conn.execute(
+            result = await conn.execute(
                 sa.insert(BoomTickets).values(
-                    id=ticket_id, telegram_id=telegram_id, user_id=user_id, category=category, 
+                    telegram_id=telegram_id, user_id=user_id, category=category, 
                     order_number=order_number, description=description, branch=branch,
                     thread_id=thread_id, subject=subject, store_id=store_id
-                )
+                ).returning(BoomTickets.id)
             )
+            ticket_id = result.scalar_one()
         return ticket_id
 
     async def update_status(self, ticket_id: str, status: str, closed_at: Optional[datetime.datetime] = None):
