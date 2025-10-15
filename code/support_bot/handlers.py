@@ -106,6 +106,7 @@ async def user_message(msg: agtypes.Message, state: FSMContext, *args, **kwargs)
     # Find user (but don't create if not found)
     user = await bot.db.boom_user.find_by_telegram_id(sender_id)
     user_id = user.id if user else None
+    phone_number = user.phone if user else "Неизвестно"
     display_name = user.name if user and user.name != "Гость" else msg.from_user.full_name
     branch = "Россия" if user and user.phone and user.phone.startswith('7') else "Неизвестно"
     
@@ -156,12 +157,14 @@ async def user_message(msg: agtypes.Message, state: FSMContext, *args, **kwargs)
         
         ticket_info = (
             f"<b>Имя:</b> {display_name}\n"
+            f"<b>Номер телефона:</b> {phone_number}\n"
             f"<b>Номер обращения:</b> №{ticket_id}\n"
             f"<b>Категория:</b> {category}\n"
             f"<b>Номер заказа:</b> {order_display}\n"
             f"<b>Филиал/Магазин:</b> {store_display}\n"
             f"<b>Описание:</b> {description}\n\n"
-            f"<i>Ответы на любые сообщения бота в этой теме будут отправлены пользователю.</i>"
+            f"<i>Чтобы ответить пользователю используйте функцию “Ответить↩️</i>"
+            f"<i>Чтобы закрыть обращение отправьте “/close” </i>"
         )
         
         # Create new thread for this ticket
@@ -287,7 +290,7 @@ async def cmd_close_ticket(msg: agtypes.Message, *args, **kwargs) -> None:
         return
 
     await bot.db.tickets.close_ticket(ticket.id)
-    await msg.answer(f"Решен ли вопрос отправлен пользователю.")
+    await msg.answer(f"Оценка обращения отправлено пользователю")
 
     from .buttons import build_closure_confirmation_keyboard
     confirmation_text = "Подскажите, пожалуйста, удалось ли решить Ваш вопрос?"
@@ -553,7 +556,7 @@ async def handle_closure_confirmation(call: agtypes.CallbackQuery, *args, **kwar
             if ticket.thread_id:
                 await bot.send_message(
                     bot.cfg['admin_group_id'],
-                    f"🔄 Тикет №{ticket_id} ПЕРЕОТКРЫТ: пользователь указал, что вопрос не решен. Ожидается уточнение.",
+                    f"🔄 Пользователь указал, что вопрос не решен. Ожидается уточнение",
                     message_thread_id=ticket.thread_id
                 )
             
