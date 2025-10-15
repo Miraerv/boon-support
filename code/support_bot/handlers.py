@@ -574,8 +574,13 @@ async def handle_closure_confirmation(call: agtypes.CallbackQuery, *args, **kwar
 async def handle_start_over(call: agtypes.CallbackQuery, state: FSMContext, *args, **kwargs):
     """Handle 'новое обращение' button"""
     await call.answer()
-    fake_msg = call.message
-    fake_msg.from_user = call.from_user
+    fake_msg = agtypes.Message(
+        message_id=call.message.message_id,
+        date=call.message.date,
+        chat=call.message.chat,
+        from_user=call.from_user,
+        message_thread_id=None
+    )
     # эмулируем /start
     await cmd_start(fake_msg, state)
 
