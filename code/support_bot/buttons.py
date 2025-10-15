@@ -19,6 +19,7 @@ from .informing import handle_error, log
 # Removed: save_for_destruction (no destruct)
 from .db import BoomOrder, Ticket  # Updated import for typing
 import datetime
+from zoneinfo import ZoneInfo
 
 def load_toml(path: Path) -> dict | None:
     """
@@ -400,15 +401,17 @@ async def get_orders_keyboard(orders: List[BoomOrder], category: str, state: FSM
     
     # Создаем маппинг текста кнопки -> order_number
     orders_map = {}
-    
+    yakutsk_tz = ZoneInfo("Asia/Yakutsk")
+
     if not orders:
         builder.row(KeyboardButton(text="Другой вопрос"))
         builder.row(KeyboardButton(text="Назад ⏪"))
     else:
         for idx, order in enumerate(orders):
             if order.created_at:
-                date_str = order.created_at.strftime('%d.%m.%Y')
-                time_str = order.created_at.strftime('%H:%M')
+                local_dt = order.created_at.replace(tzinfo=ZoneInfo("UTC")).astimezone(yakutsk_tz)
+                date_str = local_dt.strftime('%d.%m.%Y')
+                time_str = local_dt.strftime('%H:%M')
                 if idx == 0:
                     text = f"Последний заказ №{order.order_number} от {date_str} {time_str}"
                 else:
