@@ -31,7 +31,7 @@ async def cmd_start(msg: agtypes.Message, state: FSMContext, *args, **kwargs) ->
     """Start command: if user already registered, skip phone request."""
     bot = msg.bot
     db = bot.db
-    sender_id = msg.from_user.id
+    sender_id = kwargs.get("user_id") or msg.from_user.id
 
     # Проверяем, есть ли пользователь в базе
     user = await db.boom_user.find_by_telegram_id(sender_id)
@@ -574,15 +574,8 @@ async def handle_closure_confirmation(call: agtypes.CallbackQuery, *args, **kwar
 async def handle_start_over(call: agtypes.CallbackQuery, state: FSMContext, *args, **kwargs):
     """Handle 'новое обращение' button"""
     await call.answer()
-    fake_msg = agtypes.Message(
-        message_id=call.message.message_id,
-        date=call.message.date,
-        chat=call.message.chat,
-        from_user=call.from_user,
-        message_thread_id=None
-    )
     # эмулируем /start
-    await cmd_start(fake_msg, state)
+    await cmd_start(call.message, state, user_id=call.from_user.id)
 
 @log
 @handle_error
