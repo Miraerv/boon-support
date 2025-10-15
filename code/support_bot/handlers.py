@@ -453,6 +453,7 @@ async def handle_order_select(msg: agtypes.Message, state: FSMContext, *args, **
         await state.set_state(SupportFlow.description)
         await msg.answer("Задайте свой вопрос - мы поможем как можно скорее", reply_markup=get_remove_keyboard())
     else:
+        await state.set_state(SupportFlow.category)
         await msg.answer("Неизвестная команда. Выберите из меню.", reply_markup=get_categories_keyboard())
 
 
