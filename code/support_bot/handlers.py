@@ -578,17 +578,35 @@ async def handle_closure_confirmation(call: agtypes.CallbackQuery, *args, **kwar
 @handle_error
 async def handle_start_over(call: agtypes.CallbackQuery, state: FSMContext, *args, **kwargs):
     """Handle 'новое обращение' button"""
+    bot = call.message.bot
     await call.answer()
     old_text = call.message.text or ""
     if "Чтобы начать" in old_text:
         old_text = old_text.split("Чтобы начать")[0].strip()
-
-    await call.message.edit_text(f"{old_text}\n")
-
-
-    # эмулируем /start
+    
+    new_text = f"{old_text}\n"
+    
+    # Если результирующий текст пустой (только перенос строки), удаляем сообщение для чистоты
+    if old_text.strip() == "":
+        try:
+            await call.message.delete()
+            await bot.log("Удалено пустое сообщение 'start over'")
+        except Exception as e:
+            await bot.log_error(f"Не удалось удалить сообщение: {e}")
+            # Fallback: редактируем в пустое, если удаление не сработало
+            try:
+                await call.message.edit_text(new_text, reply_markup=None)
+            except:
+                pass  # Если оба варианта провалились, продолжаем дальше
+    else:
+        # Редактируем, чтобы сохранить полезный текст (например, после рейтинга)
+        try:
+            await call.message.edit_text(new_text, reply_markup=None)
+        except Exception as e:
+            await bot.log_error(f"Не удалось отредактировать сообщение: {e}")
+    
+    # Эмулируем /start, чтобы показать меню
     await cmd_start(call.message, state, user_id=call.from_user.id)
-
 @log
 @handle_error
 async def handle_rating(call: agtypes.CallbackQuery, *args, **kwargs):
