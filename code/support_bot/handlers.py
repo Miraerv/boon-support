@@ -149,7 +149,7 @@ async def user_message(msg: agtypes.Message, state: FSMContext, *args, **kwargs)
             subject_parts.append(display_name)
             subject = ': '.join(subject_parts)
         else:
-            subject = f"Незарегистрированный в BM: {display_name} ({category})"
+            subject = f"Незарегистрированный пользователь: {display_name} ({category})"
         
         # Build structured ticket info
         store_display = store_title if store_title else "Не указан"
