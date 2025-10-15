@@ -259,11 +259,6 @@ def build_closure_confirmation_keyboard(ticket_id: str) -> InlineKeyboardBuilder
     )
     return builder
 
-def build_main_menu_button() -> InlineKeyboardBuilder:
-    """Inline кнопка 'Главное меню' для возврата к началу."""
-    builder = InlineKeyboardBuilder()
-    builder.button(text="🏠 Главное меню", callback_data="main_menu")
-    return builder
 
 async def send_file(bot, chat_id: int, menuitem: dict) -> agtypes.Message:
     """
@@ -345,9 +340,6 @@ def build_rating_keyboard(ticket_id: str) -> InlineKeyboardBuilder:
     ]
     for emoji, rating in stars:
         builder.button(text=emoji, callback_data=f"rate:{ticket_id}:{rating}")
-
-    builder.row(InlineKeyboardButton(text="🏠 Главное меню", callback_data="main_menu"))
-
     builder.adjust(1)
     return builder
 

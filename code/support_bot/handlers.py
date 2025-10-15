@@ -51,31 +51,6 @@ async def cmd_start(msg: agtypes.Message, state: FSMContext, *args, **kwargs) ->
             reply_markup=get_share_phone_keyboard()
         )
 
-@log
-@handle_error
-async def cmd_main_menu(msg: agtypes.Message, state: FSMContext, *args, **kwargs) -> None:
-    """Return to main menu - same as start but for registered users."""
-    bot = msg.bot
-    db = bot.db
-    sender_id = msg.from_user.id
-
-    # Проверяем, есть ли пользователь в базе
-    user = await db.boom_user.find_by_telegram_id(sender_id)
-
-    if user and user.phone:
-        # Пользователь уже зарегистрирован — открываем меню
-        greeting = (
-            "Здравствуйте, это служба заботы о клиентах Boon Market 🩷 Чтобы мы быстрее помогли, выберите тему обращения"
-        )
-        await state.set_state(SupportFlow.category)
-        await msg.answer(greeting, reply_markup=get_categories_keyboard())
-    else:
-        # Телефона нет — просим поделиться номером
-        await state.set_state(SupportFlow.waiting_phone)
-        await msg.answer(
-            "Поделитесь номером телефона, чтобы начать работу со службой заботы.",
-            reply_markup=get_share_phone_keyboard()
-        )
 
 
 async def _create_ticket_thread(msg: agtypes.Message, subject: str, ticket_info: str) -> int:
@@ -608,8 +583,8 @@ async def handle_rating(call: agtypes.CallbackQuery, *args, **kwargs):
 
         # Обновляем сообщение
         await call.message.edit_text(
-            f"Спасибо за оценку {rating}⭐!\n",
-            reply_markup=build_main_menu_button().as_markup()
+            f"Спасибо за оценку {rating}⭐!\n"
+            f"Чтобы начать новое обращение — нажмите /start."
         )
 
         # Уведомляем админов
@@ -627,26 +602,12 @@ async def handle_rating(call: agtypes.CallbackQuery, *args, **kwargs):
         await bot.log_error(e)
         await call.answer("Произошла ошибка при сохранении оценки.")
 
-@log
-@handle_error
-async def handle_main_menu_button(call: agtypes.CallbackQuery, state: FSMContext, *args, **kwargs):
-    """Handle main menu button press."""
-    bot = call.message.bot
-    sender_id = call.from_user.id
-    
-    greeting = (
-        "Здравствуйте, это служба заботы о клиентах Boon Market 🩷 Чтобы мы быстрее помогли, выберите тему обращения"
-    )
-    await state.set_state(SupportFlow.category)
-    await call.message.edit_text(greeting)
-    await bot.send_message(sender_id, greeting, reply_markup=get_categories_keyboard())
-    await call.answer()
+
 
 def register_handlers(dp: Dispatcher) -> None:
     """Register all the handlers to the provided dispatcher"""
     # Basic commands
     dp.message.register(cmd_start, PrivateChatFilter(), Command('start'))
-    dp.message.register(cmd_main_menu, PrivateChatFilter(), Command('menu'))  
     dp.message.register(added_to_group, NewChatMembersFilter())
     dp.message.register(group_chat_created, GroupChatCreatedFilter())
     dp.message.register(mention_in_admin_group, BotMention(), InAdminGroup())
@@ -689,7 +650,6 @@ def register_handlers(dp: Dispatcher) -> None:
     # RATING HANDLER (исправлено: проверяем префикс 't:' вместо 't::')
     dp.callback_query.register(handle_closure_confirmation, BtnInPrivateChat(), F.data.startswith('t:'))
     dp.callback_query.register(handle_rating, BtnInPrivateChat(), F.data.startswith('rate:'))
-    dp.callback_query.register(handle_main_menu_button, BtnInPrivateChat(), F.data == 'main_menu')
 
     # GENERAL CALLBACK HANDLERS
     dp.callback_query.register(user_btn_handler, BtnInPrivateChat())
