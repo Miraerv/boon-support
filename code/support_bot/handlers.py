@@ -176,8 +176,6 @@ async def user_message(msg: agtypes.Message, state: FSMContext, *args, **kwargs)
         else:
             user_response = f"Мы получили Ваше обращение, спасибо! График работы техподдержки: с 08:00 до 23:00. Пожалуйста, ожидайте ответа - мы ответим в рабочее время."
         
-        user_response += "\n\nВы можете продолжить писать сообщения - они будут переданы оператору. Когда обращение будет закрыто, вас попросят оценить качество обслуживания."
-        
         # Keep user in active ticket state - clear state to allow free messaging
         await bot.send_message(msg.chat.id, user_response, reply_markup=get_remove_keyboard())
         await state.clear()  # Clear state so user can freely message
