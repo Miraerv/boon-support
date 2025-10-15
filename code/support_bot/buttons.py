@@ -42,7 +42,7 @@ class CBD(CallbackData, prefix='_'):
 # New: Short CallbackData for tickets (fits <64 bytes)
 class TicketCBD(CallbackData, prefix='t'):
     action: str  # 'connect', 'close', 'feedback_yes', 'feedback_no'
-    ticket_id: str
+    ticket_id: int
 
 
 class Button:
