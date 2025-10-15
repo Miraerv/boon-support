@@ -239,9 +239,9 @@ class TicketRepo(SqlRepo):
                     telegram_id=telegram_id, user_id=user_id, category=category, 
                     order_number=order_number, description=description, branch=branch,
                     thread_id=thread_id, subject=subject, store_id=store_id
-                ).returning(BoomTickets.id)
+                )
             )
-            ticket_id = result.scalar_one()
+            ticket_id = result.lastrowid
         return ticket_id
 
     async def update_status(self, ticket_id: str, status: str, closed_at: Optional[datetime.datetime] = None):
