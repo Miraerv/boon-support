@@ -242,7 +242,7 @@ async def user_message(msg: agtypes.Message, state: FSMContext, *args, **kwargs)
             await msg.answer(
                 f"Чтобы начать новое обращение — нажмите кнопку ниже 👇",
                 reply_markup=build_start_over_keyboard().as_markup()
-        )
+            )
 
 
 
