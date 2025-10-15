@@ -12,7 +12,7 @@ from .buttons import (
     admin_btn_handler, send_new_msg_with_keyboard, user_btn_handler,
     get_share_phone_keyboard, get_categories_keyboard,
     get_faq_keyboard, get_orders_keyboard, get_remove_keyboard,
-    build_feedback_keyboard, build_rating_keyboard, TicketCBD
+    build_feedback_keyboard, build_rating_keyboard, build_start_over_keyboard, TicketCBD
 )
 from .informing import handle_error, log
 from .filters import (
@@ -571,6 +571,15 @@ async def handle_closure_confirmation(call: agtypes.CallbackQuery, *args, **kwar
 
 @log
 @handle_error
+async def handle_start_over(call: agtypes.CallbackQuery, state: FSMContext, *args, **kwargs):
+    """Handle 'новое обращение' button"""
+    await call.answer()
+    msg = call.message
+    # эмулируем /start
+    await cmd_start(msg, state)
+
+@log
+@handle_error
 async def handle_rating(call: agtypes.CallbackQuery, *args, **kwargs):
     """Handle user rating (1–5 stars)"""
     bot = call.message.bot
@@ -584,7 +593,8 @@ async def handle_rating(call: agtypes.CallbackQuery, *args, **kwargs):
         # Обновляем сообщение
         await call.message.edit_text(
             f"Спасибо за оценку {rating}⭐!\n"
-            f"Чтобы начать новое обращение — нажмите /start."
+            f"Чтобы начать новое обращение — нажмите кнопку ниже 👇",
+            reply_markup=build_start_over_keyboard().as_markup()
         )
 
         # Уведомляем админов
@@ -608,6 +618,7 @@ def register_handlers(dp: Dispatcher) -> None:
     """Register all the handlers to the provided dispatcher"""
     # Basic commands
     dp.message.register(cmd_start, PrivateChatFilter(), Command('start'))
+    dp.callback_query.register(handle_start_over, BtnInPrivateChat(), F.data == "start_over")
     dp.message.register(added_to_group, NewChatMembersFilter())
     dp.message.register(group_chat_created, GroupChatCreatedFilter())
     dp.message.register(mention_in_admin_group, BotMention(), InAdminGroup())
