@@ -377,7 +377,7 @@ async def handle_categories(msg: agtypes.Message, state: FSMContext, *args, **kw
             return
         orders = await db.boom_user.get_recent_orders(user.id)
         await state.set_state(SupportFlow.order_select)
-        full_text = f"Выберите номер заказа, по которому нужна помощь: {cat_text}"
+        full_text = f"Выберите номер заказа, по которому нужна помощь"
         if not orders:
             full_text += "\nНет недавних заказов"
         await msg.answer(full_text, reply_markup=await get_orders_keyboard(orders, cat_text, state))
@@ -397,7 +397,7 @@ async def handle_categories(msg: agtypes.Message, state: FSMContext, *args, **kw
             return
         orders = await db.boom_user.get_recent_orders(user.id)
         await state.set_state(SupportFlow.order_select)
-        full_text = f"Выберите номер заказа, по которому нужна помощь: {cat_text}"
+        full_text = f"Выберите номер заказа, по которому нужна помощь"
         if not orders:
             full_text += "\nНет недавних заказов"
         await msg.answer(full_text, reply_markup=await get_orders_keyboard(orders, cat_text, state))
