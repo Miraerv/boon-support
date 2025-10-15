@@ -139,7 +139,7 @@ async def user_message(msg: agtypes.Message, state: FSMContext, *args, **kwargs)
             store_id=store_id
         )
 
-        display_name_with_id = f"№{ticket_id} | {user.name if user and user.name != 'Гость' else msg.from_user.full_name}"
+        display_name_with_id = f"№{ticket_id}"
 
         
         # Build subject
