@@ -332,11 +332,11 @@ def build_rating_keyboard(ticket_id: str) -> InlineKeyboardBuilder:
     """Клавиатура для оценки обращения (1–5 звёзд)."""
     builder = InlineKeyboardBuilder()
     stars = [
-        ("⭐", 1),
-        ("⭐⭐", 2),
-        ("⭐⭐⭐", 3),
-        ("⭐⭐⭐⭐", 4),
         ("⭐⭐⭐⭐⭐", 5),
+        ("⭐⭐⭐⭐", 4),
+        ("⭐⭐⭐", 3),
+        ("⭐⭐", 2),
+        ("⭐", 1),
     ]
     for emoji, rating in stars:
         builder.button(text=emoji, callback_data=f"rate:{ticket_id}:{rating}")
@@ -358,25 +358,24 @@ def get_main_menu_keyboard() -> ReplyKeyboardMarkup:
     builder = ReplyKeyboardBuilder()
     builder.row(KeyboardButton(text="Категории обращения"))
     builder.row(KeyboardButton(text="Мои обращения"))
-    builder.row(KeyboardButton(text="Вопросы и ответы"))
+    builder.row(KeyboardButton(text="Частые вопросы"))
     return builder.as_markup(resize_keyboard=True, one_time_keyboard=False)
 
 
 def get_categories_keyboard() -> ReplyKeyboardMarkup:
     """Categories sub-menu."""
     builder = ReplyKeyboardBuilder()
-    builder.row(KeyboardButton(text="Проблема с заказом"), KeyboardButton(text="Проблема с доставкой"))
-    builder.row(KeyboardButton(text="Другое"))
-    builder.row(KeyboardButton(text="Вопросы и ответы"))
+    builder.row(KeyboardButton(text="Вопрос по заказу"), KeyboardButton(text="Где мой заказ"))
+    builder.row(KeyboardButton(text="Другой вопрос"))
+    builder.row(KeyboardButton(text="Частые вопросы"))
     return builder.as_markup(resize_keyboard=True, one_time_keyboard=True)
 
 
 def get_faq_keyboard() -> ReplyKeyboardMarkup:
     """FAQ menu."""
     builder = ReplyKeyboardBuilder()
-    builder.row(KeyboardButton(text="Как сделать заказ?"))
-    builder.row(KeyboardButton(text="Статус доставки"))
-    builder.row(KeyboardButton(text="Возврат товара"))
+    builder.row(KeyboardButton(text="Как узнать статус заказа"))
+    builder.row(KeyboardButton(text="Как сделать возврат"))
     builder.row(KeyboardButton(text="Назад ⏪"))
     return builder.as_markup(resize_keyboard=True, one_time_keyboard=True)
 
@@ -385,9 +384,9 @@ def get_other_categories_keyboard() -> ReplyKeyboardMarkup:
     """Other categories."""
     builder = ReplyKeyboardBuilder()
     builder.row(KeyboardButton(text="Задержка доставки заказа"))
-    builder.row(KeyboardButton(text="Проблема с заказом"))
-    builder.row(KeyboardButton(text="Другое"))
-    builder.row(KeyboardButton(text="Назад к категориям"))
+    builder.row(KeyboardButton(text="Вопрос по заказу"))
+    builder.row(KeyboardButton(text="Другой вопрос"))
+    builder.row(KeyboardButton(text="Назад ⏪"))
     return builder.as_markup(resize_keyboard=True, one_time_keyboard=True)
 
 
@@ -399,8 +398,8 @@ async def get_orders_keyboard(orders: List[BoomOrder], category: str, state: FSM
     orders_map = {}
     
     if not orders:
-        builder.row(KeyboardButton(text="Другое"))
-        builder.row(KeyboardButton(text="Назад к категориям"))
+        builder.row(KeyboardButton(text="Другой вопрос"))
+        builder.row(KeyboardButton(text="Назад ⏪"))
     else:
         for idx, order in enumerate(orders):
             if order.created_at:
@@ -415,8 +414,8 @@ async def get_orders_keyboard(orders: List[BoomOrder], category: str, state: FSM
                 orders_map[text] = order.order_number
                 builder.row(KeyboardButton(text=text))
         
-        builder.row(KeyboardButton(text="Другое"))
-        builder.row(KeyboardButton(text="Назад к категориям"))
+        builder.row(KeyboardButton(text="Другой вопрос"))
+        builder.row(KeyboardButton(text="Назад ⏪"))
     
     # Сохраняем маппинг в state
     await state.update_data(orders_map=orders_map)
