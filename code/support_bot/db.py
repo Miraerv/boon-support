@@ -132,7 +132,7 @@ class SqlBoomUser(SqlRepo):
     def __init__(self, url: str):
         super().__init__(url)
         self.engine = create_async_engine(
-            url, echo=False, pool_size=5, max_overflow=10  # Improved: Bounded pooling
+            url, echo=False, pool_size=5, max_overflow=10, pool_pre_ping=True, pool_recycle=3600  # Improved: Bounded pooling
         )  # No echo for prod hygiene
 
     async def find_by_phone(self, phone: str) -> Optional[BoomUser]:
