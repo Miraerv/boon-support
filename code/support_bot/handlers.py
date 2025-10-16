@@ -343,10 +343,10 @@ async def handle_contact(msg: agtypes.Message, state: FSMContext, *args, **kwarg
             await bot.log(f"User found: ID {user.id}, name {user.name}")
             if not user.telegram_id or user.telegram_id != sender_id:
                 await db.boom_user.update_telegram_id(user.id, sender_id)
-            greeting = "Здравствуйте, это служба заботы о клиентах Boon Market. Чтобы мы быстрее помогли, выберите тему обращения."
+            greeting = "Здравствуйте, это служба заботы о клиентах Boon Market 🩷 Чтобы мы быстрее помогли, выберите тему обращения."
         else:
             await bot.log(f"User not found: {redacted_phone}")
-            greeting = "Здравствуйте, это служба заботы о клиентах Boon Market. Чтобы мы быстрее помогли, выберите тему обращения."
+            greeting = "Здравствуйте, это служба заботы о клиентах Boon Market 🩷 Чтобы мы быстрее помогли, выберите тему обращения."
         
         await state.set_state(SupportFlow.category)
         await msg.answer(greeting, reply_markup=get_categories_keyboard())
@@ -372,7 +372,7 @@ async def handle_categories(msg: agtypes.Message, state: FSMContext, *args, **kw
 
     if text == "Вопрос по заказу":
         user = await db.boom_user.find_by_telegram_id(sender_id)
-        cat_text = "проблемы с заказом"
+        cat_text = "вопросу с заказом"
         await state.update_data(category=cat_text)
         if not user:
             await state.update_data(order="не указан")
@@ -392,13 +392,13 @@ async def handle_categories(msg: agtypes.Message, state: FSMContext, *args, **kw
         
     elif text == "Где мой заказ":
         user = await db.boom_user.find_by_telegram_id(sender_id)
-        cat_text = "задержки доставки"
+        cat_text = "где мой заказ"
         await state.update_data(category=cat_text)
         if not user:
             await state.update_data(order="не указан")
             await state.set_state(SupportFlow.description)
             await msg.answer(
-                f"Вы выбрали {cat_text}, но поскольку вы не связаны с аккаунтом Boon Market, у нас нет ваших заказов. "
+                f"Вы выбрали {cat_text}, но поскольку вы не связаны с аккаунтом Boon Market, у нас нет ваших заказов "
                 "Задайте свой вопрос - мы поможем как можно скорее", 
                 reply_markup=get_remove_keyboard()
             )
@@ -416,10 +416,10 @@ async def handle_categories(msg: agtypes.Message, state: FSMContext, *args, **kw
         await msg.answer("Напишите, пожалуйста, вопрос - мы поможем как можно скорее", reply_markup=get_remove_keyboard())
         
     elif text == "Частые вопросы":
-        await msg.answer("Выберите вопрос:", reply_markup=get_faq_keyboard())
+        await msg.answer("Выберите вопрос", reply_markup=get_faq_keyboard())
         
     elif text == "Назад ⏪":
-        await msg.answer("Напишите, пожалуйста, вопрос - мы поможем как можно скорее:", reply_markup=get_categories_keyboard())
+        await msg.answer("Напишите, пожалуйста, вопрос - мы поможем как можно скорее", reply_markup=get_categories_keyboard())
 
 
 @log
@@ -437,7 +437,7 @@ async def handle_order_select(msg: agtypes.Message, state: FSMContext, *args, **
         await msg.answer("Задайте свой вопрос - мы поможем как можно скорее", reply_markup=get_remove_keyboard())
         
     elif text == "Назад ⏪":
-        await msg.answer("Напишите, пожалуйста, вопрос - мы поможем как можно скорее:", reply_markup=get_categories_keyboard())
+        await msg.answer("Напишите, пожалуйста, вопрос - мы поможем как можно скорее", reply_markup=get_categories_keyboard())
         await state.set_state(SupportFlow.category)
         
     elif text and ("Последний заказ" in text or "Заказ №" in text):
