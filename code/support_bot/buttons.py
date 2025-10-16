@@ -370,7 +370,7 @@ def get_main_menu_keyboard() -> ReplyKeyboardMarkup:
 def get_categories_keyboard() -> ReplyKeyboardMarkup:
     """Categories sub-menu."""
     builder = ReplyKeyboardBuilder()
-    builder.row(KeyboardButton(text="Вопрос по заказу"), KeyboardButton(text="Где мой заказ"))
+    builder.row(KeyboardButton(text="Вопрос по заказу"), KeyboardButton(text="Вопрос по доставке"))
     builder.row(KeyboardButton(text="Другой вопрос"))
     builder.row(KeyboardButton(text="Частые вопросы"))
     return builder.as_markup(resize_keyboard=True, one_time_keyboard=True)

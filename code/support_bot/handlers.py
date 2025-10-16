@@ -390,9 +390,9 @@ async def handle_categories(msg: agtypes.Message, state: FSMContext, *args, **kw
             full_text += "\nНет недавних заказов"
         await msg.answer(full_text, reply_markup=await get_orders_keyboard(orders, cat_text, state))
         
-    elif text == "Где мой заказ":
+    elif text == "Вопрос по доставке":
         user = await db.boom_user.find_by_telegram_id(sender_id)
-        cat_text = "где мой заказ"
+        cat_text = "вопрос по доставке"
         await state.update_data(category=cat_text)
         if not user:
             await state.update_data(order="не указан")
@@ -666,7 +666,7 @@ def register_handlers(dp: Dispatcher) -> None:
         SupportFlow.category, 
         F.text.in_([
             "Вопрос по заказу", 
-            "Где мой заказ", 
+            "Вопрос по доставке", 
             "Другой вопрос", 
             "Частые вопросы",
             "Назад ⏪"
