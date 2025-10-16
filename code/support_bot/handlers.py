@@ -378,8 +378,7 @@ async def handle_categories(msg: agtypes.Message, state: FSMContext, *args, **kw
             await state.update_data(order="не указан")
             await state.set_state(SupportFlow.description)
             await msg.answer(
-                f"Вы выбрали {cat_text}, но поскольку вы не связаны с аккаунтом Boon Market, у нас нет ваших заказов. "
-                "Задайте свой вопрос - мы поможем как можно скорее", 
+                "Напишите, пожалуйста, свой вопрос - мы поможем как можно скорее", 
                 reply_markup=get_remove_keyboard()
             )
             return
@@ -398,8 +397,7 @@ async def handle_categories(msg: agtypes.Message, state: FSMContext, *args, **kw
             await state.update_data(order="не указан")
             await state.set_state(SupportFlow.description)
             await msg.answer(
-                f"Вы выбрали {cat_text}, но поскольку вы не связаны с аккаунтом Boon Market, у нас нет ваших заказов "
-                "Задайте свой вопрос - мы поможем как можно скорее", 
+                "Напишите, пожалуйста, свой вопрос - мы поможем как можно скорее", 
                 reply_markup=get_remove_keyboard()
             )
             return
