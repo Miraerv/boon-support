@@ -226,9 +226,7 @@ class TicketRepo(SqlRepo):
     """Repository for BoomTickets (O(1) ops via indexes)."""
     def __init__(self, url: str):
         super().__init__(url)
-        self.engine = create_async_engine(
-            url, echo=False, pool_size=5, max_overflow=10
-        )
+        self.engine = create_async_engine(url, echo=False, pool_size=5, max_overflow=10, pool_pre_ping=True, pool_recycle=3600)
 
     async def create(self, telegram_id: int, user_id: Optional[int], category: str, order_number: Optional[str], 
                      description: str, branch: str, thread_id: Optional[int] = None, 
