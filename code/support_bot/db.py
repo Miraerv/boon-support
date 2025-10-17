@@ -151,10 +151,9 @@ class SqlDb:
                 pool_recycle=3600,         # Recycle connections every hour
                 pool_timeout=30,           # Timeout waiting for connection
                 connect_args={
-                    'connect_timeout': 10, # Connection timeout
-                    'read_timeout': 30,    # Read timeout
-                    'write_timeout': 30,   # Write timeout
+                    'connect_timeout': 10, # Connection timeout (aiomysql specific)
                     'charset': 'utf8mb4',
+                    'autocommit': False,
                 }
             )
             
