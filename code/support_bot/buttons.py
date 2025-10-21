@@ -380,7 +380,7 @@ def get_faq_keyboard() -> ReplyKeyboardMarkup:
     """FAQ menu."""
     builder = ReplyKeyboardBuilder()
     builder.row(KeyboardButton(text="Как узнать статус заказа"))
-    builder.row(KeyboardButton(text="Как сделать возврат"))
+    builder.row(KeyboardButton(text="Как узнать о наличии продуктов"))
     builder.row(KeyboardButton(text="Назад ⏪"))
     return builder.as_markup(resize_keyboard=True, one_time_keyboard=True)
 

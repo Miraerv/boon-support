@@ -474,9 +474,9 @@ async def handle_faq(msg: agtypes.Message, state: FSMContext, *args, **kwargs) -
             reply_markup=get_faq_keyboard()
         )
         
-    elif text == "Как сделать возврат":
+    elif text == "Как узнать о наличии продуктов":
         await msg.answer(
-            "Обратитесь в службу заботы для оформления возврата", 
+            "Все актуальные товары отоброжаются в каталоге\nЕсли товар закончился или не соотвествует нашим стандартам качества, сборщик свяжется с вами и предложит оптимальную замену\nПросто выберит эту функцию при оформлении заказа", 
             reply_markup=get_faq_keyboard()
         )
 
@@ -680,7 +680,7 @@ def register_handlers(dp: Dispatcher) -> None:
         SupportFlow.category, 
         F.text.in_([
             "Как узнать статус заказа", 
-            "Как сделать возврат", 
+            "Как узнать о наличии продуктов", 
             "Назад ⏪"
         ])
     )
