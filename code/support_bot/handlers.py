@@ -1,12 +1,13 @@
 # handlers.py (updated)
 
+import asyncio
+import datetime
+from zoneinfo import ZoneInfo
 import aiogram.types as agtypes
 from aiogram import Dispatcher, F
 from aiogram.exceptions import TelegramBadRequest, TelegramForbiddenError
 from aiogram.filters import Command
 from aiogram.fsm.context import FSMContext
-from zoneinfo import ZoneInfo
-import datetime
 from .admin_actions import BroadcastForm, admin_broadcast_ask_confirm, admin_broadcast_finish
 from .buttons import (
     admin_btn_handler, send_new_msg_with_keyboard, user_btn_handler,
@@ -62,6 +63,13 @@ async def _create_ticket_thread(msg: agtypes.Message, subject: str, ticket_info:
     thread_id = response.message_thread_id
 
     await bot.send_message(group_id, ticket_info, message_thread_id=thread_id, parse_mode='HTML')
+
+    # Переслать оригинальное сообщение пользователя (с фото/видео/документами)
+    try:
+        await msg.forward(group_id, message_thread_id=thread_id)
+    except Exception as e:
+        await bot.log_error(f"Failed to forward original message to thread {thread_id}: {e}")
+
     return thread_id
 
 
@@ -112,9 +120,22 @@ async def user_message(msg: agtypes.Message, state: FSMContext, *args, **kwargs)
     
     # Check if user has an open or reopened ticket first
     ticket = await bot.db.tickets.find_last_open_by_user(sender_id)
-    
+
     # If we're in description state AND no open ticket exists, create new ticket
     if state_name == SupportFlow.description and not ticket:
+        # Если это часть media group (альбом фото), проверяем дважды
+        # чтобы избежать создания нескольких тикетов при одновременной обработке
+        if msg.media_group_id:
+            await asyncio.sleep(0.3)  # Даем время первому сообщению создать тикет
+            ticket = await bot.db.tickets.find_last_open_by_user(sender_id)
+            if ticket:
+                # Тикет уже создан другим сообщением из альбома - пересылаем в него
+                if ticket.thread_id:
+                    try:
+                        await msg.forward(group_id, message_thread_id=ticket.thread_id)
+                    except Exception as e:
+                        await bot.log_error(f"Failed to forward media group message: {e}")
+                return
         category = data.get('category', 'unknown')
         order_number = data.get('order', 'не указан')
         description = msg.text or msg.caption or 'No text'
