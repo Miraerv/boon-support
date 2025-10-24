@@ -3,6 +3,8 @@
 import asyncio
 import datetime
 from zoneinfo import ZoneInfo
+from collections import defaultdict
+from contextlib import nullcontext
 import aiogram.types as agtypes
 from aiogram import Dispatcher, F
 from aiogram.exceptions import TelegramBadRequest, TelegramForbiddenError
@@ -24,6 +26,19 @@ from .filters import (
 from .utils import make_user_info
 from .db import BoomUser, Ticket
 from .const import SupportFlow
+
+
+# Global storage for processed media groups (to prevent duplicate tickets)
+# Structure: {media_group_id: ticket_id}
+_processed_media_groups = {}
+_media_group_locks = defaultdict(asyncio.Lock)
+
+
+async def _cleanup_media_group(media_group_id: str, delay: int = 60):
+    """Remove media group from processed list after delay to prevent memory leak"""
+    await asyncio.sleep(delay)
+    _processed_media_groups.pop(media_group_id, None)
+    _media_group_locks.pop(media_group_id, None)
 
 
 @log
@@ -123,89 +138,111 @@ async def user_message(msg: agtypes.Message, state: FSMContext, *args, **kwargs)
 
     # If we're in description state AND no open ticket exists, create new ticket
     if state_name == SupportFlow.description and not ticket:
-        # Если это часть media group (альбом фото), проверяем дважды
-        # чтобы избежать создания нескольких тикетов при одновременной обработке
-        if msg.media_group_id:
-            await asyncio.sleep(0.3)  # Даем время первому сообщению создать тикет
-            ticket = await bot.db.tickets.find_last_open_by_user(sender_id)
-            if ticket:
-                # Тикет уже создан другим сообщением из альбома - пересылаем в него
-                if ticket.thread_id:
+        # Handle media groups (photo albums) to prevent duplicate tickets
+        if msg.media_group_id and msg.media_group_id in _processed_media_groups:
+            # Ticket already created for this media group - just forward the message
+            ticket_id = _processed_media_groups[msg.media_group_id]
+            existing_ticket = await bot.db.tickets.get_by_id(ticket_id)
+            if existing_ticket and existing_ticket.thread_id:
+                try:
+                    await msg.forward(group_id, message_thread_id=existing_ticket.thread_id)
+                except Exception as e:
+                    await bot.log_error(f"Failed to forward media group message: {e}")
+            return
+
+        # Use lock for media groups to ensure only one message creates the ticket
+        # For non-media-group messages, use nullcontext (no locking)
+        lock_context = _media_group_locks[msg.media_group_id] if msg.media_group_id else nullcontext()
+
+        async with lock_context:
+            # Double-check after acquiring lock (for media groups)
+            if msg.media_group_id and msg.media_group_id in _processed_media_groups:
+                ticket_id = _processed_media_groups[msg.media_group_id]
+                existing_ticket = await bot.db.tickets.get_by_id(ticket_id)
+                if existing_ticket and existing_ticket.thread_id:
                     try:
-                        await msg.forward(group_id, message_thread_id=ticket.thread_id)
+                        await msg.forward(group_id, message_thread_id=existing_ticket.thread_id)
                     except Exception as e:
                         await bot.log_error(f"Failed to forward media group message: {e}")
                 return
-        category = data.get('category', 'unknown')
-        order_number = data.get('order', 'не указан')
-        description = msg.text or msg.caption or 'No text'
-        
-        # Get order details to extract store_id (only if user exists and order specified)
-        store_id = None
-        store_title = None
-        if order_number and order_number != 'не указан' and user_id:
-            order_details = await bot.db.boom_user.get_order_by_number(order_number)
-            if order_details and order_details.get('store_id'):
-                store_id = order_details['store_id']
-                store_title = await bot.db.boom_user.get_store_title(store_id)
-        
-        # Create ticket first without thread_id
-        ticket_id = await bot.db.tickets.create(
-            telegram_id=sender_id,
-            user_id=user_id,
-            category=category,
-            order_number=order_number if order_number != 'не указан' else None,
-            description=description,
-            branch=branch,
-            store_id=store_id
-        )
 
-        display_name_with_id = f"№{ticket_id}"
+            # Create the ticket
+            category = data.get('category', 'unknown')
+            order_number = data.get('order', 'не указан')
+            description = msg.text or msg.caption or 'No text'
 
-        
-        # Build subject
-        if user_id:
-            subject_parts = []
-            if store_title:
-                subject_parts.append(store_title)
-            if order_number and order_number != 'не указан':
-                subject_parts.append(order_number)
-            subject_parts.append(display_name_with_id)
-            subject = ': '.join(subject_parts)
-        else:
-            subject = f"Незарегистрированный пользователь: {display_name_with_id} ({category})"
-        
-        # Build structured ticket info
-        store_display = store_title if store_title else "Не указан"
-        order_display = order_number if order_number != 'не указан' else "Не указан"
-        
-        ticket_info = (
-            f"<b>Имя:</b> {display_name}\n"
-            f"<b>Номер телефона:</b> {phone_number}\n"
-            f"<b>Номер обращения:</b> №{ticket_id}\n"
-            f"<b>Категория:</b> {category}\n"
-            f"<b>Номер заказа:</b> {order_display}\n"
-            f"<b>Филиал/Магазин:</b> {store_display}\n"
-            f"<b>Описание:</b> {description}\n\n"
-            f"<i>Чтобы ответить пользователю используйте функцию “Ответить↩️</i>"
-            f"<i>Чтобы закрыть обращение отправьте “/close” </i>"
-        )
-        
-        # Create new thread for this ticket
-        thread_id = await _create_ticket_thread(msg, subject, ticket_info)
-        
-        # Update ticket with thread_id and subject
-        await bot.db.tickets.update_thread_subject(ticket_id, thread_id, subject)
+            # Get order details to extract store_id (only if user exists and order specified)
+            store_id = None
+            store_title = None
+            if order_number and order_number != 'не указан' and user_id:
+                order_details = await bot.db.boom_user.get_order_by_number(order_number)
+                if order_details and order_details.get('store_id'):
+                    store_id = order_details['store_id']
+                    store_title = await bot.db.boom_user.get_store_title(store_id)
 
-        # Send to user
-        if 8 <= yakutsk_hour <= 23:
-            user_response = f"Мы получили Ваше обращение, спасибо! Наш оператор уже видит запрос и скоро с Вами свяжется 😊\nПожалуйста, ожидайте ответа - это не займет много времени 🙌"
-        else:
-            user_response = f"Мы получили Ваше обращение, спасибо! График работы техподдержки: с 08:00 до 23:00. Пожалуйста, ожидайте ответа - мы ответим в рабочее время 🙌"
-        
-        # Keep user in active ticket state - clear state to allow free messaging
-        await bot.send_message(msg.chat.id, user_response, reply_markup=get_remove_keyboard())
-        await state.clear()  # Clear state so user can freely message
+            # Create ticket first without thread_id
+            ticket_id = await bot.db.tickets.create(
+                telegram_id=sender_id,
+                user_id=user_id,
+                category=category,
+                order_number=order_number if order_number != 'не указан' else None,
+                description=description,
+                branch=branch,
+                store_id=store_id
+            )
+
+            display_name_with_id = f"№{ticket_id}"
+
+
+            # Build subject
+            if user_id:
+                subject_parts = []
+                if store_title:
+                    subject_parts.append(store_title)
+                if order_number and order_number != 'не указан':
+                    subject_parts.append(order_number)
+                subject_parts.append(display_name_with_id)
+                subject = ': '.join(subject_parts)
+            else:
+                subject = f"Незарегистрированный пользователь: {display_name_with_id} ({category})"
+
+            # Build structured ticket info
+            store_display = store_title if store_title else "Не указан"
+            order_display = order_number if order_number != 'не указан' else "Не указан"
+
+            ticket_info = (
+                f"<b>Имя:</b> {display_name}\n"
+                f"<b>Номер телефона:</b> {phone_number}\n"
+                f"<b>Номер обращения:</b> №{ticket_id}\n"
+                f"<b>Категория:</b> {category}\n"
+                f"<b>Номер заказа:</b> {order_display}\n"
+                f"<b>Филиал/Магазин:</b> {store_display}\n"
+                f"<b>Описание:</b> {description}\n\n"
+                f'<i>Чтобы ответить пользователю используйте функцию "Ответить↩️"</i>\n'
+                f'<i>Чтобы закрыть обращение отправьте "/close" </i>'
+            )
+
+            # Create new thread for this ticket
+            thread_id = await _create_ticket_thread(msg, subject, ticket_info)
+
+            # Update ticket with thread_id and subject
+            await bot.db.tickets.update_thread_subject(ticket_id, thread_id, subject)
+
+            # If this is a media group, mark it as processed
+            if msg.media_group_id:
+                _processed_media_groups[msg.media_group_id] = ticket_id
+                # Schedule cleanup after 60 seconds to prevent memory leak
+                asyncio.create_task(_cleanup_media_group(msg.media_group_id, delay=60))
+
+            # Send to user
+            if 8 <= yakutsk_hour <= 23:
+                user_response = f"Мы получили Ваше обращение, спасибо! Наш оператор уже видит запрос и скоро с Вами свяжется 😊\nПожалуйста, ожидайте ответа - это не займет много времени 🙌"
+            else:
+                user_response = f"Мы получили Ваше обращение, спасибо! График работы техподдержки: с 08:00 до 23:00. Пожалуйста, ожидайте ответа - мы ответим в рабочее время 🙌"
+
+            # Keep user in active ticket state - clear state to allow free messaging
+            await bot.send_message(msg.chat.id, user_response, reply_markup=get_remove_keyboard())
+            await state.clear()  # Clear state so user can freely message
 
     else:
         try:
