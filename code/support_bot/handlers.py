@@ -129,7 +129,16 @@ async def user_message(msg: agtypes.Message, state: FSMContext, *args, **kwargs)
     # Find user (but don't create if not found)
     user = await bot.db.boom_user.find_by_telegram_id(sender_id)
     user_id = user.id if user else None
-    phone_number = user.phone if user else "Неизвестно"
+
+    # Get phone number from user or from state (for unregistered users)
+    if user and user.phone:
+        phone_number = user.phone
+    else:
+        phone_number = data.get('phone_number', 'Неизвестно')
+
+    # Get Telegram username
+    telegram_username = f"@{msg.from_user.username}" if msg.from_user.username else "Не указан"
+
     display_name = user.name if user and user.name != "Гость" else msg.from_user.full_name
     branch = "Россия" if user and user.phone and user.phone.startswith('7') else "Неизвестно"
     
@@ -213,6 +222,7 @@ async def user_message(msg: agtypes.Message, state: FSMContext, *args, **kwargs)
             ticket_info = (
                 f"<b>Имя:</b> {display_name}\n"
                 f"<b>Номер телефона:</b> {phone_number}\n"
+                f"<b>Telegram:</b> {telegram_username}\n"
                 f"<b>Номер обращения:</b> №{ticket_id}\n"
                 f"<b>Категория:</b> {category}\n"
                 f"<b>Номер заказа:</b> {order_display}\n"
@@ -394,6 +404,9 @@ async def handle_contact(msg: agtypes.Message, state: FSMContext, *args, **kwarg
     sender_id = msg.from_user.id
     redacted_phone = f"****{phone[-4:]}"
     await bot.log(f"Received contact: {redacted_phone} (user_id: {sender_id})")
+
+    # Save phone number to state for unregistered users
+    await state.update_data(phone_number=phone)
 
     try:
         user = await db.boom_user.find_by_phone(phone)
