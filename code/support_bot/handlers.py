@@ -443,7 +443,7 @@ async def handle_categories(msg: agtypes.Message, state: FSMContext, *args, **kw
 
     if text == "Вопрос по заказу":
         user = await db.boom_user.find_by_telegram_id(sender_id)
-        cat_text = "вопросу с заказом"
+        cat_text = "вопрос с заказом"
         await state.update_data(category=cat_text)
         if not user:
             await state.update_data(order="не указан")
