@@ -479,14 +479,20 @@ async def handle_categories(msg: agtypes.Message, state: FSMContext, *args, **kw
             full_text += "\nНет недавних заказов"
         await msg.answer(full_text, reply_markup=await get_orders_keyboard(orders, cat_text, state))
         
+    elif text == "Не могу войти":
+        await msg.answer(
+            "Перейдите по ссылке, чтобы авторизоваться: https://t.me/boon_market_auth_bot",
+            reply_markup=get_categories_keyboard()
+        )
+
     elif text == "Другой вопрос":
         await state.update_data(category="Другой вопрос")
         await state.set_state(SupportFlow.description)
         await msg.answer("Напишите, пожалуйста, вопрос - мы поможем как можно скорее", reply_markup=get_remove_keyboard())
-        
+
     elif text == "Частые вопросы":
         await msg.answer("Выберите вопрос", reply_markup=get_faq_keyboard())
-        
+
     elif text == "Назад ⏪":
         await msg.answer("Напишите, пожалуйста, вопрос - мы поможем как можно скорее", reply_markup=get_categories_keyboard())
 
@@ -731,12 +737,13 @@ def register_handlers(dp: Dispatcher) -> None:
     
     # Category handlers
     dp.message.register(
-        handle_categories, 
-        SupportFlow.category, 
+        handle_categories,
+        SupportFlow.category,
         F.text.in_([
-            "Вопрос по заказу", 
-            "Вопрос по доставке", 
-            "Другой вопрос", 
+            "Вопрос по заказу",
+            "Вопрос по доставке",
+            "Не могу войти",
+            "Другой вопрос",
             "Частые вопросы",
             "Назад ⏪"
         ])
